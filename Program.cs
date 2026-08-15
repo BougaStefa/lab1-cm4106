@@ -9,7 +9,7 @@ public class Program
 			Console.WriteLine("Usage: MyReader <filename>.");
 			return;
 		}
-		MyReader reader = new MyReader();
+		MyOutputReader reader = new MyOutputReader();
 		reader.ReadFile(args[0]);
 	}
 }
