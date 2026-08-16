@@ -1,22 +1,80 @@
 namespace lab1_cm4106;
 
-public class MyOutputReader : MyReader
+public class MyOutputReader : MyReader, IStatsGenerator
 {
+	private List<string> lines = new();
+	private const string output = "output.txt";
+	private const string stats = "stats.txt";
+
+	public int GetLineCount()
+	{
+		return lines.Count;
+	}
+
+	public int GetCharacterCount()
+	{
+		return lines.Sum(l => l.Length);
+	}
+
+	public int GetWordCount()
+	{
+		return lines.SelectMany(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries)).Count();
+	}
+
+	public List<string> GetFirstWord()
+	{
+		return lines.Select(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+				.Where(words => words.Length > 0)
+				.Select(words => words[0]).ToList();
+	}
+
+	public List<char> GetEndLine()
+	{
+		return lines.Where(l => l.Length > 0)
+			.Select(l => l[^1])
+			.ToList();
+	}
+
+	public List<char> GetFirstLetter()
+	{
+		return lines
+				.SelectMany(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+				.Where(w => w.Length > 0)
+				.Select(w => w[0])
+				.ToList();
+	}
+
 	public override void ReadFile(string filename)
 	{
-		File.Delete("output.txt"); // Clear file on before next run
+		File.Delete(output); // Clear files before next run
+		File.Delete(stats);
 		base.ReadFile(filename);
+		GenerateStatsFile();
 	}
 
 	public override void ProcessLine(string line, int lineNum)
 	{
 		try
 		{
-			File.AppendAllText("output.txt", $"{lineNum} {line}\n");
+			lines.Add(line);
+			File.AppendAllText(output, $"{lineNum} {line}\n");
 		}
 		catch (IOException ex)
 		{
 			Console.WriteLine($"Error writing to output.txt: {ex.Message}");
 		}
+	}
+	public void GenerateStatsFile()
+	{
+		List<string> statsLines = new List<string>
+		{
+			$"Line Count: {GetLineCount()}",
+			$"Character Count: {GetCharacterCount()}",
+			$"Word Count: {GetWordCount()}",
+			$"First Words: {string.Join(", ", GetFirstWord())}",
+			$"First Letters: {string.Join(", ", GetFirstLetter())}",
+			$"End Characters: {string.Join(", ", GetEndLine())}",
+		};
+		File.AppendAllLines(stats, statsLines);
 	}
 }
