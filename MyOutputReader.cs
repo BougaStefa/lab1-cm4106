@@ -5,6 +5,8 @@ public class MyOutputReader : MyReader, IStatsGenerator
 	private List<string> lines = new();
 	private const string output = "output.txt";
 	private const string stats = "stats.txt";
+	private bool isValid = true;
+	private int errorLine = -1;
 
 	public int GetLineCount()
 	{
@@ -49,20 +51,32 @@ public class MyOutputReader : MyReader, IStatsGenerator
 		File.Delete(output); // Clear files before next run
 		File.Delete(stats);
 		base.ReadFile(filename);
+		if (!isValid){
+			Console.WriteLine($"Error on line {errorLine}");
+			return;
+		}
+		File.WriteAllLines(output,lines.Select((l,i)=> $"{i+1} {l}"));
 		GenerateStatsFile();
 	}
 
 	public override void ProcessLine(string line, int lineNum)
 	{
-		try
+		if (line.TrimStart().StartsWith('#'))
 		{
-			lines.Add(line);
-			File.AppendAllText(output, $"{lineNum} {line}\n");
+			return;
 		}
-		catch (IOException ex)
+
+		string trimmedEnd = line.TrimEnd();
+		if (trimmedEnd.Length == 0)
 		{
-			Console.WriteLine($"Error writing to output.txt: {ex.Message}");
+			return;
 		}
+		if (trimmedEnd[^1] != '+' && trimmedEnd[^1]!=';'){
+			isValid = false;
+			if (errorLine == -1) errorLine = lineNum;
+			return;
+		}
+		lines.Add(line);
 	}
 	public void GenerateStatsFile()
 	{
